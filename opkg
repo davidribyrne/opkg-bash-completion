@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for arg
+do
+	case "$arg" in
+	list)
+		echo -e "´bash xz xz-dbg xz-dev xz-doc xz-lic xz-locale-cs xz-locale-de xz-locale-fr xz-locale-it xz-locale-pl xz-locale-vi zlib" |
+		sed "s/ /\n/g"
+		;;
+	*)
+		;;
+	esac
+done

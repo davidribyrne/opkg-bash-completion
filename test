@@ -1,0 +1,248 @@
+#!/bin/bash
+
+set -e
+
+scriptdir=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
+
+export PATH="$scriptdir:$PATH"
+
+which colordiff &>/dev/null &&
+{
+	diff()
+	{
+		colordiff $@
+	}
+}
+
+bark()
+{
+	cmd=$(sed -n "$1 { s/^.*<(//g; s/)[^)]*$//g; p }" "$0")
+	echo -e "\033[1;37m$1\033[m: \033[1;35m$cmd\033[m"
+
+	exit 1
+}
+
+diff -u <(cat <<EOF
+--add-arch
+--add-dest
+--add-exclude
+--add-ignore-recommends
+--autoremove
+--cache-dir
+--combine
+--conf
+--dest
+--download-only
+--fields
+--force-checksum
+--force-depends
+--force-downgrade
+--force-maintainer
+--force-overwrite
+--force-postinstall
+--force-reinstall
+--force-removal-of-dependent-packages
+--force-space
+--host-cache-dir
+--lists-dir
+--noaction
+--nodeps
+--no-install-recommends
+--offline-root
+--prefer-arch-to-version
+--short-description
+--size
+--tmp-dir
+--verbosity
+--volatile-cache
+-A
+-d
+-f
+-l
+-o
+-t
+-V
+clean
+compare-versions
+configure
+depends
+download
+files
+find
+flag
+info
+install
+list
+list-changed-conffiles
+list-installed
+list-upgradable
+print-architecture
+remove
+search
+status
+update
+upgrade
+verify
+whatconflicts
+whatdepends
+whatdependsrec
+whatprovides
+whatrecommends
+whatreplaces
+whatsuggests
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+update
+upgrade
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg u)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+upgrade
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg upg)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+update
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg upd)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+info
+install
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg i)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+install
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg ins)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+xz
+xz-dbg
+xz-dev
+xz-doc
+xz-lic
+xz-locale-cs
+xz-locale-de
+xz-locale-fr
+xz-locale-it
+xz-locale-pl
+xz-locale-vi
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg install xz)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+--add-arch
+--add-dest
+--add-exclude
+--add-ignore-recommends
+--cache-dir
+--combine
+--conf
+--dest
+--download-only
+--force-checksum
+--force-depends
+--force-downgrade
+--force-maintainer
+--force-overwrite
+--force-postinstall
+--force-reinstall
+--force-space
+--host-cache-dir
+--lists-dir
+--noaction
+--nodeps
+--no-install-recommends
+--offline-root
+--prefer-arch-to-version
+--tmp-dir
+--verbosity
+--volatile-cache
+-d
+-f
+-l
+-o
+-t
+-V
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg install -)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+Architecture
+Description
+Filename
+Maintainer
+MD5Sum
+Provides
+Recommends
+Section
+Size
+Source
+Status
+Version
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg --fields)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+Architecture
+Description
+Filename
+Maintainer
+MD5Sum
+Provides
+Recommends
+Section
+Size
+Source
+Status
+Version
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg info --fields)' 'COMP_CWORD=3') || bark $LINENO
+
+diff -u <(cat <<EOF
+Version
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg --fields V)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+--verbosity
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg --ve)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+0
+1
+2
+3
+4
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg --verbosity)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+0
+1
+2
+3
+4
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg --verbosity =)' 'COMP_CWORD=2') || bark $LINENO
+
+diff -u <(cat <<EOF
+flag
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg fl)' 'COMP_CWORD=1') || bark $LINENO
+
+diff -u <(cat <<EOF
+hold
+installed
+noprune
+ok
+unpacked
+user
+EOF
+) <(opkg-bash-completion 'COMP_WORDS=(opkg flag)' 'COMP_CWORD=2') || bark $LINENO

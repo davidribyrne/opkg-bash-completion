@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+
+packages() {
+	opkg list $@ | awk '!/^ / { print $1 }'
+}
+
+trace() {
+	[[ $BASH_COMPLETION_TRACE ]] &&
+		echo -e "\033[36m$1\033[m=\033[1;37m'$(eval echo $1)'\033[m" >&2
+}
+
+_opkg() {
+	# COMP_WORDS: an array of all the words typed after the
+	#    name of the program the compspec belongs to
+	# COMP_CWORD: an index of the COMP_WORDS array pointing
+	#    to the word the current cursor is at - in other words,
+	#    the index of the word the cursor was when the tab key was pressed
+
+	[[ ${COMP_WORDS[@]} ]] || return
+	[[ $COMP_CWORD      ]] || return
+
+	### DEBUG {
+	if [[ $BASH_COMPLETION_TRACE ]]; then
+		if [[ -w "$BASH_COMPLETION_TRACE" ]]; then
+			exec 2>"$BASH_COMPLETION_TRACE"
+			restore=$(tty)
+		fi
+	fi
+
+	trace '${#COMP_WORDS[@]}'
+	trace '${COMP_WORDS[@]}'
+	trace '$COMP_CWORD'
+	### }
+
+	local COMMANDS="  update upgrade install configure remove clean flag"
+	local COMMANDS+=" list list-installed list-upgradable list-changed-conffiles"
+	local COMMANDS+=" files search find info status download compare-versions"
+	local COMMANDS+=" print-architecture depends whatdepends whatdependsrec"
+	local COMMANDS+=" whatrecommends whatsuggests whatprovides whatconflicts whatreplaces verify"
+
+	local GLOBALS="  -V --verbosity"
+	local GLOBALS+=" --host-cache-dir"
+	local GLOBALS+=" --volatile-cache"
+
+	local PATHS="     --add-dest"
+	local PATHS+="    --cache-dir"
+	local PATHS+=" -d --dest"
+	local PATHS+=" -f --conf"
+	local PATHS+=" -l --lists-dir"
+	local PATHS+=" -o --offline-root"
+	local PATHS+=" -t --tmp-dir"
+
+	local FIELDS="  Architecture Description Filename MD5Sum Maintainer"
+	local FIELDS+=" Provides Recommends Section Size Source Status Version"
+
+	declare -A local COMMAND_OPTS=(
+		[clean]=
+		[configure]=
+		[depends]="-A --prefer-arch-to-version"
+		[download]="--prefer-arch-to-version"
+		[files]=
+		[find]=
+		[info]="--fields --short-description"
+		[install]="--noaction --download-only --nodeps --force-depends --force-maintainer --force-reinstall --force-overwrite --force-downgrade --force-space --force-postinstall --force-checksum --no-install-recommends --prefer-arch-to-version --combine --add-ignore-recommends --add-exclude --add-arch"
+		[list]=
+		[list-installed]="--size"
+		[list-upgradable]="--prefer-arch-to-version"
+		[list-changed-conffiles]=
+		[remove]="--force-removal-of-dependent-packages --autoremove"
+		[search]=
+		[status]="--fields"
+		[update]=
+		[upgrade]="${COMMAND_OPTS[install]}"
+		[verify]=
+		[whatconflicts]="-A"
+		[whatdepends]="-A"
+		[whatdependsrec]="-A"
+		[whatprovides]="-A"
+		[whatrecommends]="-A"
+		[whatreplaces]="-A"
+		[whatsuggests]="-A"
+	)
+
+	local current="${COMP_WORDS[$COMP_CWORD]}"
+	local previous="${COMP_WORDS[$((COMP_CWORD - 1))]}"
+
+	### DEBUG {
+	trace '$current'
+	trace '$previous'
+
+	${BASH_COMPLETION_TRACE:+set -x}
+	### }
+
+	### Option parameters
+
+	case "$previous" in
+	--add-arch)
+		local archs=($(opkg print-architecture | awk '{ print $2 ":" }'))
+		COMPREPLY=($(compgen -W "${archs[*]}" -- "$current"))
+		;;
+
+	   --add-dest|\
+	-d|--dest)
+		# no need to auto complete --dest,
+		# auto complete after file system items "--add-dest dest:" works automatically...
+		COMPREPLY=("")
+		;;
+
+	--add-exclude|\
+	--add-ignore-recommends)
+		COMPREPLY=($(compgen -W "$(packages)" -- "$current"))
+		;;
+
+	   --cache-dir|\
+	-f|--conf|\
+	-l|--lists-dir|\
+	-o|--offline-root|\
+	-t|--tmp-dir)
+		# use default
+		COMPREPLY=("")
+		;;
+
+	--fields)
+		COMPREPLY=($(compgen -W "$FIELDS" -- "$current"))
+		;;
+
+	--verbosity)
+		COMPREPLY=($(compgen -W "0 1 2 3 4" -- ""))
+		;;
+
+	"=")
+		COMPREPLY=("$current")
+		;;
+	esac
+
+	[[ ${#COMPREPLY[@]} == 0 ]] || return
+
+	### Commands
+
+	local command
+
+	for w in "${!COMP_WORDS[@]}"
+	do
+		if [[ " ${COMMANDS[*]} " =~ " ${COMP_WORDS[$w]} " ]]; then
+			command="${COMP_WORDS[$w]}"
+			pos=$w
+			break;
+		fi
+	done
+
+	### DEBUG {
+	trace '$command'
+	### }
+
+	if [[ -z "$command" ]]; then
+		local opts=$(set +x; for c in ${COMMANDS[*]}; do echo ${COMMAND_OPTS[$c]}; done)
+		COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMANDS[*]} $opts" -- "$current"))
+	else
+		[[ "compare-versions" == $command ]] && return
+
+		case "$command" in
+		install|download|info|status|files)
+			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
+			;;
+		remove)
+			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-installed)" -- "$current"))
+			;;
+		upgrade)
+			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-upgradable)" -- "$current"))
+			;;
+		depends|whatdepends|whatdependsrec|whatrecommends|whatsuggests|whatprovides|whatconflicts|whatreplaces)
+			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
+			;;
+		flag)
+			if [[ $(($pos + 1)) -eq $COMP_CWORD ]]; then
+				# directly after "flag" command we want a flag value
+				COMPREPLY+=($(compgen -W "${COMMAND_OPTS[$command]} hold noprune user ok installed unpacked" -- "$current"))
+			else
+				# flag ist already present, now state the package...
+				COMPREPLY+=($(compgen -W "$(packages)" -- "$current"))
+			fi
+			;;
+		*)
+			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]}" -- "$current"))
+			;;
+		esac
+	fi
+
+	### DEBUG {
+	${BASH_COMPLETION_TRACE:+set +x}
+
+	if [[ $restore ]]; then
+		exec 2>"$restore"
+	fi
+	### }
+}
+
+complete -o default -F _opkg opkg
+
+### DEBUG {
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+	for arg
+	do
+		eval "$arg"
+	done
+
+	_opkg
+
+	echo "${COMPREPLY[@]}" |
+	sed 's/  */\n/g' |
+	sed -r 's/^--([^-])/  \1/g; s/^-([^-])/ \1/g' |
+	sort -u |
+	sed 's/^  /--/g; s/^ /-/g'
+fi
+### }
