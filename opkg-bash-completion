@@ -61,12 +61,12 @@ _opkg() {
 		[files]=
 		[find]=
 		[info]="--fields --short-description"
-		[install]="--noaction --download-only --nodeps --force-depends --force-maintainer --force-reinstall --force-overwrite --force-downgrade --force-space --force-postinstall --force-checksum --no-install-recommends --prefer-arch-to-version --combine --add-ignore-recommends --add-exclude --add-arch"
+		[install]="--noaction --download-only --nodeps --force-depends --force-maintainer --force-reinstall --force-overwrite --force-downgrade --force-space --force-postinstall --force-checksum --force-remove --no-install-recommends --prefer-arch-to-version --combine --add-ignore-recommends --add-exclude --add-arch"
 		[list]=
 		[list-installed]="--size"
 		[list-upgradable]="--prefer-arch-to-version"
 		[list-changed-conffiles]=
-		[remove]="--force-removal-of-dependent-packages --autoremove"
+		[remove]="--force-remove --force-removal-of-dependent-packages --autoremove"
 		[search]=
 		[status]="--fields"
 		[update]=

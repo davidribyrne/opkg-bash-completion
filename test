@@ -42,6 +42,7 @@ diff -u <(cat <<EOF
 --force-postinstall
 --force-reinstall
 --force-removal-of-dependent-packages
+--force-remove
 --force-space
 --host-cache-dir
 --lists-dir
@@ -152,6 +153,7 @@ diff -u <(cat <<EOF
 --force-overwrite
 --force-postinstall
 --force-reinstall
+--force-remove
 --force-space
 --host-cache-dir
 --lists-dir
