@@ -138,6 +138,7 @@ _opkg() {
 	### Commands
 
 	local command
+	local pos
 
 	for w in "${!COMP_WORDS[@]}"
 	do
