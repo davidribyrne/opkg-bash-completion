@@ -158,32 +158,38 @@ _opkg() {
 	else
 		[[ "compare-versions" == $command ]] && return
 
-		case "$command" in
-		install|download|info|status|files)
-			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
-			;;
-		remove)
-			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-installed)" -- "$current"))
-			;;
-		upgrade)
-			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-upgradable)" -- "$current"))
-			;;
-		depends|whatdepends|whatdependsrec|whatrecommends|whatsuggests|whatprovides|whatconflicts|whatreplaces)
-			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
-			;;
-		flag)
-			if [[ $(($pos + 1)) -eq $COMP_CWORD ]]; then
-				# directly after "flag" command we want a flag value
-				COMPREPLY+=($(compgen -W "${COMMAND_OPTS[$command]} hold noprune user ok installed unpacked" -- "$current"))
-			else
-				# flag ist already present, now state the package...
-				COMPREPLY+=($(compgen -W "$(packages)" -- "$current"))
-			fi
-			;;
-		*)
-			COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]}" -- "$current"))
-			;;
-		esac
+		commands=($(compgen -W "$COMMANDS" -- "$current"))
+
+		if [[ $current && ${#commands[@]} -gt 1 ]]; then
+			COMPREPLY+=("${commands[@]}")
+		else
+			case "$command" in
+			install|download|info|status|files)
+				COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
+				;;
+			remove)
+				COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-installed)" -- "$current"))
+				;;
+			upgrade)
+				COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages list-upgradable)" -- "$current"))
+				;;
+			depends|whatdepends|whatdependsrec|whatrecommends|whatsuggests|whatprovides|whatconflicts|whatreplaces)
+				COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]} $(packages)" -- "$current"))
+				;;
+			flag)
+				if [[ $(($pos + 1)) -eq $COMP_CWORD ]]; then
+					# directly after "flag" command we want a flag value
+					COMPREPLY+=($(compgen -W "${COMMAND_OPTS[$command]} hold noprune user ok installed unpacked" -- "$current"))
+				else
+					# flag ist already present, now state the package...
+					COMPREPLY+=($(compgen -W "$(packages)" -- "$current"))
+				fi
+				;;
+			*)
+				COMPREPLY+=($(compgen -W "$GLOBALS $PATHS ${COMMAND_OPTS[$command]}" -- "$current"))
+				;;
+			esac
+		fi
 	fi
 
 	### DEBUG {
